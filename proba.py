@@ -1,158 +1,116 @@
-# Chandler Supple, 4/28/2018
-# A simulation of Newton's Cradle in a vacuum environment, devoid of weight and friction.
-
 import sys
-import math
 import pygame
-import random
-from pygame.locals import *
+from pygame.gfxdraw import aacircle as circ
+from pygame.gfxdraw import filled_circle as fcirc
+import numpy as np
+from time import sleep
+
+#Rezolucija
+Xsize = 1000
+Ysize = 800
+#Konstante
+g = 9.80
+L = 200
+tirkizna = [84,255,159]
+purple = [131,111,255]
+theta = 1.2
+
+c1 = np.array([420,L])
+c2 = np.array([460,L])
+c3 = np.array([500,L])
+c4 = np.array([540,L])
+c5 = np.array([(L*np.sin(theta))+(Xsize/2)+80, L*np.cos(theta)])
+print(L*np.sin(theta))
+
+
+def draw_circ(screen, location, R, color):
+    Sx = int(location[0])
+    Sy = int(location[1])
+    fcirc(screen, Sx, Sy, R, color)
+    circ(screen, Sx, Sy, R, color)
+    if Sx + R > Xsize:
+        fcirc(screen, Sx-Xsize,  Sy, R, color)
+        circ(screen, Sx-Xsize, Sy , R, color)
+    if Sx - R < 0:
+        fcirc(screen, Sx+Xsize, Sy , R, color)
+        circ(screen, Sx+Xsize, Sy , R, color)
+
+
+
+
+def Kugla1():
+    pygame.draw.line(screen, purple, ((Xsize/2)-80, 0), c1, 2)
+    draw_circ(screen, c1, 20, tirkizna)
+
+def Kugla2():
+    pygame.draw.line(screen, purple, ((Xsize/2)-40, 0), c2, 2)
+    draw_circ(screen, c2, 20, tirkizna)
+
+def Kugla3():
+    pygame.draw.line(screen, purple, ((Xsize/2), 0), c3, 2)
+    draw_circ(screen, c3, 20, tirkizna)
+
+def Kugla4():
+    pygame.draw.line(screen, purple, ((Xsize/2)+40, 0), c4, 2)
+    draw_circ(screen, c4, 20, tirkizna)
+
+def Kugla5():
+    pygame.draw.line(screen, purple, ((Xsize/2)+80, 0), c5, 2)
+    draw_circ(screen, c5, 20, tirkizna)
+
+
+# Napraviti Kuglu 2 i prenjeti brzinu pri udarcu na nju
+
+
+v=0
+a=0
+R = 20
+
 
 pygame.init()
 
-screen = pygame.display.set_mode((1000,500))
-pygame.display.set_caption("Netwon's Cradle Simulation (Vacuum, Weighless, Controlled)")
+screen = pygame.display.set_mode((Xsize,Ysize))
 
-clock = pygame.time.Clock()
+sudar1 = False
+sudar2 = False
+running = True
 
-i = 0
-j_ = 0
-clicked = 0
-stop = 0
+while running:
 
-white = (255,255,255)
-black = (0,0,0)
-light_grey = (245,245,245)
-grey = (230,230,230)
-grey_other = (120,120,120)
-brown = (152, 128, 99)
-dark_brown = (122, 100, 71)
-light_brown = (172, 148, 119)
-light_blue = (180,180,255)
-random_color = ((random.randint(50,230)), (random.randint(50,230)), (random.randint(50,230)))
+    event = pygame.event.poll()
+    if event.type == pygame.QUIT:
+        running = False
 
-font = pygame.font.SysFont("corbel", 35)
-title = font.render("Newton's Cradle", 5, (dark_brown))
+    screen.fill(pygame.Color(84,84,84))
 
-def base():
-    pygame.draw.rect(screen, brown, (0, 400, 1000, 100), 0)
-    pygame.draw.rect(screen, dark_brown, (0, 380, 1000, 65), 0)
-    pygame.draw.rect(screen, light_brown, ((0), 450, 1000, 50), 0)
+    Kugla1()
+    Kugla2()
+    Kugla3()
+    Kugla4()
+    Kugla5()
 
-def frame():
-    pygame.draw.rect(screen, grey_other, (100, 100, 700, 13), 0)
-    pygame.draw.rect(screen, grey_other, (100, 100, 13, 310), 0)
-    pygame.draw.rect(screen, grey_other, (800, 100, 13, 310), 0)
-    pygame.draw.rect(screen, grey_other, (75, 410, 60, 13), 0)
-    pygame.draw.rect(screen, grey_other, (775, 410, 60, 13), 0)
-    for i in range (0,6):
-        pygame.draw.circle(screen, white, ((i*40)+340+(i),120), 12, 2)
 
-x_ = 340
-y_ = 320
+    a = -0.01*np.sin(theta)
+    v += a
+    theta += v
+    #c5 = np.array([(L*np.sin(theta))+(Xsize/2)+80, L*np.cos(theta)])
+    sleep(1/30)
 
-def first_marble(x_, y_):
-    if (x_>340):
-        x_ = 340
-    if (y_>320):
-        y_ = 320
-    pygame.draw.line(screen, light_grey, (340,130), (x_,y_), 2)
-    pygame.draw.circle(screen, random_color, (x_, y_), 20, 0)
+    if sudar1 == False:
+        c5 = np.array([(L*np.sin(theta))+(Xsize/2)+80, L*np.cos(theta)])
+        sudar2 = True
+        c1 = np.array([420,L])
 
-def marbles():
-    for i in range (1,5):
-        pygame.draw.rect(screen, light_grey, ((i*40)+339+(i),130, 2, 180), 0)
-        pygame.draw.circle(screen, random_color, ((i*40)+340+(i),320), 20, 0)
+    if not sudar1 and c5[0]<=(c4[0]+R*2):
+        sudar1 = True
+        sudar2 = False
+        c5 = np.array([580,L])
 
-def end_marble(x, y):
-    if (x<544):
-        x = 544
-        y = 320
-    if (y>322):
-        y = 320
-    pygame.draw.line(screen, light_grey, (544,130), (x,y), 2)
-    pygame.draw.circle(screen, random_color, (x, y), 20, 0)
+    if sudar1 and c5[0]>=c4[0]+2*R:
+        sudar1 = False
 
-try:
-    while True:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
+    if sudar2 == False:
+        c1 = np.array([(L*np.sin(theta))+(Xsize/2)-80, L*np.cos(theta)])
 
-        pressed = pygame.key.get_pressed()
-        if pressed[pygame.K_SPACE]: clicked = 1
-        if pressed[pygame.K_r]: clicked = 0
 
-        if (clicked == 0):
-            x, y__ = pygame.mouse.get_pos()
-            y = int(round(math.sqrt(300000-(((x-436)**2)/2))-216.5,0))
-            x_ = 340
-            y_ = 320
-            x_ch = x
-            y_ch = y
-
-        if (clicked == 1):
-            diff = x_ch - 544
-            if (i <= diff):
-                x = x_ch - (i)
-                y = int(round(math.sqrt(300000-(((x-436)**2)/2))-216.5,0))
-                i = i + 25
-                if pressed[pygame.K_s]: clicked = 0
-            if (i >= diff):
-                x = 544
-                y = 320
-                i = 0
-                clicked = 2
-
-        if (clicked == 2):
-            diff = x_ch - 544
-            if (i <= diff):
-                x_ = 340 - (i)
-                y_ = int(round(math.sqrt(300000-(((x_-436)**2)/2))-216.5,0))
-                i = i + 25
-                if pressed[pygame.K_s]: clicked = 0
-            if (i >= diff):
-                i = 0
-                clicked = 3
-
-        if (clicked == 3):
-            diff = x_ch - 544
-            if (i <= diff):
-                x_ = (340-diff) + (i)
-                y_ = int(round(math.sqrt(300000-(((x_-436)**2)/2))-216.5,0))
-                i = i + 25
-                if pressed[pygame.K_s]: clicked = 0
-            if (i >= diff):
-                x_ = 340
-                y_ = 320
-                i = 0
-                clicked = 4
-
-        if (clicked == 4):
-            diff = x_ch - 544
-            if (i <= diff):
-                x = 544 + (i)
-                y = int(round(math.sqrt(300000-(((x-436)**2)/2))-216.5,0))
-                i = i + 25
-                if pressed[pygame.K_s]: clicked = 0
-            if (i >= diff):
-                i = 0
-                clicked = 1
-
-    #    print('x: %s' %(x))
-    #    print('y: %s' %(y))
-
-        screen.fill(grey)
-        base()
-        frame()
-        first_marble(x_, y_)
-        marbles()
-        end_marble(x, y)
-
-        screen.blit(title, (100,50))
-
-        pygame.display.flip()
-        clock.tick(60)
-
-except:
-    if event.type != pygame.QUIT:
-        print('Sorry, but it looks like an error has occured.')
+    pygame.display.flip()
