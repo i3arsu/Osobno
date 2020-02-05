@@ -15,8 +15,8 @@ Ysize = 960
 #Konstante
 g = 9.80
 m = 50
-L = 150 # pixeli
-PocetniKut = 1.5
+L = 100 # pixeli
+PocetniKut = 1.2
 tirkizna = [84,255,159]
 purple = [131,111,255]
 
@@ -78,6 +78,7 @@ while running:
     theta = PocetniKut*np.cos((g/L)**(1/2)*t)
     A = (L* 0.0264)-((L* 0.0264)*np.cos(theta))
     print(theta)
+    sleep(0.01)
 
 
 
