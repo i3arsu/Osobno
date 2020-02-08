@@ -2,95 +2,115 @@ import sys
 import pygame
 from pygame.gfxdraw import aacircle as circ
 from pygame.gfxdraw import filled_circle as fcirc
+import matplotlib.pyplot as plt
+from scipy.integrate import odeint
 import numpy as np
 from time import sleep
 
-
 #Rezolucija
 Xsize = 1000
-Ysize = 960
-
+Ysize = 400
 #Konstante
 g = 9.80
-L = 100
-PocetniKut = 1.2
+L = 200
+l = 200*0.0264
+m = 50
+R = 20
+
 tirkizna = [84,255,159]
 purple = [131,111,255]
+theta0 = 1.2
+br_kugli = 1
+kugla = []
+x0 = 420
+for i in range(5):
+    kugla.append(np.array([x0+i*40,L]))
 
-#Poziv pygame
-pygame.init()
-#Otvaranje prozora
-screen = pygame.display.set_mode((Xsize,Ysize))
-
-
-# Funkcija za crtanje krugova
 def draw_circ(screen, location, R, color):
     Sx = int(location[0])
     Sy = int(location[1])
     fcirc(screen, Sx, Sy, R, color)
     circ(screen, Sx, Sy, R, color)
-    if Sx + R > Xsize:
-        fcirc(screen, Sx-Xsize,  Sy, R, color)
-        circ(screen, Sx-Xsize, Sy , R, color)
-    if Sx - R < 0:
-        fcirc(screen, Sx+Xsize, Sy , R, color)
-        circ(screen, Sx+Xsize, Sy , R, color)
 
-def Kugle():
-    for i in range (1,5):
-        #pygame.draw.rect(screen, purple, ((i*40)+339+(i),130, 2, 180), 0)
-        pygame.draw.circle(screen, tirkizna, ((i*40)+340+(i),320), 20, 0)
+def Kugla(screen, kugla, x):
+    pygame.draw.line(screen, purple, ((Xsize/2)-x, 0), kugla, 2)
+    draw_circ(screen, kugla, R, tirkizna)
 
-def Kugla2(x,y):
-    pygame.draw.line(screen, purple, (x,350),(x,y), 3)
-    # pygame.draw.circle(screen, white,(x,y), 20, 0)
-    draw_circ (screen, (x,y),20,tirkizna)
+def formule(y0, t):
+    theta0, x = y0
+    f = [x, -(g/l) * np.sin(theta0)]
+    return f
 
-def Kugla2_pokret(x,y):
-    theta = PocetniKut*np.cos((g/L)**(1/2)*t)
+def plot_results(time, theta1, theta2):
+       plt.plot(time, theta1[:,0])
+       plt.plot(time, theta2)
+       plt.xlabel('Vrijeme (s)')
+       plt.ylabel('Kut (Radijani)')
+       plt.legend(['Nelinearno', 'Linearno'], loc='top right')
+       plt.show()
 
-    pygame.draw.line(screen, purple, (x,350), [(L * np.sin(theta))+460,(L * np.cos(theta)+400)], 3)
-    # pygame.draw.circle(screen, white,(x,y), 20, 0)
-    draw_circ (screen, [(L * np.sin(theta))+x,(L * np.cos(theta)+400)],20,tirkizna)
 
-right = True
-t = 0
+Egp = m*g*l
+T = 2*np.pi*(np.sqrt(l/g))
+
+print(T)
+
+#Graf
+time = np.arange(0, 10, 0.025)
+
+x0 = np.radians(0.0)
+theta1 = odeint(formule, [theta0, x0],  time)
+w = np.sqrt(g/l)
+theta2 = [theta0 * np.cos(w*t) for t in time]
+
 running = True
-Sudar = False
+t = 0
 
+dt = 0.025
 
-while running:
+n = int(input("Koliko kuglica želiš pomaknuti? "))
 
+pygame.init()
+screen = pygame.display.set_mode((Xsize,Ysize))
+
+dx = 80
+for i in range(n):
+    kugla[-(i+1)] = np.array([(L*np.sin(theta0))+(Xsize/2)+dx, L*np.cos(theta0)])
+    dx -= 40
+
+while running and t<10:
+    theta = theta0 * np.cos(w*t)
     event = pygame.event.poll()
     if event.type == pygame.QUIT:
         running = False
 
     screen.fill(pygame.Color(84,84,84))
+    x1 = 80
+    for i in range(5):
+        Kugla(screen, kugla[i], x1)
+        x1 -= 40
 
-    theta = PocetniKut*np.cos((g/L)**(1/2)*t)
-
-
-    #Kugla2(460,550)
-
-    pygame.draw.line(screen,[255,250,250],(350,350),(600,350),5)
-    Kugle()
-
-    if right:
-        pygame.draw.line(screen, purple, (500,350), [(L * np.sin(theta))+500,(L * np.cos(theta)+400)], 3)
-        draw_circ (screen, [(L * np.sin(theta))+500,(L * np.cos(theta)+400)],20,tirkizna)
-        Kugla2(460,(400+L))  # Stacionarna kugla 2
-
+    if theta >= 0:
+        dx = 80
+        j = 0
+        for i in range(n):
+            kugla[j] = np.array([420 + j*40, L])
+            kugla[-(i+1)] = np.array([(L*np.sin(theta))+(Xsize/2)+dx, L*np.cos(theta)])
+            dx -= 40
+            if j < 5-n:
+                j += 1
     else:
-        Kugla2_pokret(460,550)
-        pygame.draw.line(screen, purple, (500,350), (500,(400+L)), 3)
-        draw_circ (screen, (500,(400+L)),20,tirkizna)
+        dx = -80
+        j = 0
+        for i in range(n):
+            kugla[-(j+1)] = np.array([580 - j*40, L])
+            kugla[i] = np.array([(L*np.sin(theta))+(Xsize/2)+dx, L*np.cos(theta)])
+            dx += 40
+            if j < 5-n:
+                j+=1
 
+    sleep(0.025)
 
-    # Kad pendulum dode do theta = 0 prebaci se na lijevi
-    if theta <= 0:
-        right = False  # Return
-    else:
-        right = True
-
-    t += 0.01
+    t += dt
     pygame.display.flip()
+plot_results(time, theta1, theta2)
